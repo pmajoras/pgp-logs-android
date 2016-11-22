@@ -3,6 +3,7 @@ package pgp.logs;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -33,9 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pgp.logs.models.FormValidationResult;
+import pgp.logs.models.UserLoginResult;
 import pgp.logs.tasks.ITaskListener;
 import pgp.logs.tasks.UserLoginTask;
 import pgp.logs.utils.LoginActivityUtil;
+import pgp.logs.utils.LoginUtil;
 
 /**
  * A login screen that offers login via email/password.
@@ -47,18 +50,10 @@ public class LoginActivity extends AppCompatActivity {
      */
     private LoginActivityUtil mLoginActivityUtil = null;
     private UserLoginTask mAuthTask = null;
-    private ITaskListener<Boolean> mAuthTaskListener = new ITaskListener<Boolean>() {
+    private ITaskListener<UserLoginResult> mAuthTaskListener = new ITaskListener<UserLoginResult>() {
         @Override
-        public void onTaskCompleted(Boolean returnValue) {
-            mAuthTask = null;
-            showProgress(false);
-
-            if (returnValue) {
-                finish();
-            } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
-            }
+        public void onTaskCompleted(UserLoginResult loginResult) {
+            onUserTaskCompleted(loginResult);
         }
 
         @Override
@@ -67,6 +62,19 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
         }
     };
+
+    public void onUserTaskCompleted(UserLoginResult loginResult) {
+        mAuthTask = null;
+
+        if (loginResult.IsAuthenticated()) {
+            LoginUtil.setAuthToken(loginResult.getToken(), this);
+            redirectToHome(loginResult);
+        } else {
+            mPasswordView.setError(getString(R.string.error_incorrect_password));
+            mPasswordView.requestFocus();
+        }
+        showProgress(false);
+    }
 
     // UI references.
     private AutoCompleteTextView mEmailView;
@@ -84,15 +92,12 @@ public class LoginActivity extends AppCompatActivity {
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                attemptLogin();
-            }
-        });
-
         mLoginActivityUtil = new LoginActivityUtil(LoginActivity.this, mEmailView, mPasswordView);
+
+        String currentToken = LoginUtil.getAuthToken(getBaseContext());
+        if (!TextUtils.isEmpty(currentToken)) {
+            redirectToHome(new UserLoginResult(currentToken));
+        }
     }
 
     /**
@@ -103,13 +108,10 @@ public class LoginActivity extends AppCompatActivity {
                                            @NonNull int[] grantResults) {
     }
 
-
     /**
-     * Attempts to sign in or register the account specified by the login form.
-     * If there are form errors (invalid email, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
+     * Called when the user clicks the Send button
      */
-    private void attemptLogin() {
+    public void login(View view) {
         if (mAuthTask != null) {
             return;
         }
@@ -129,6 +131,13 @@ public class LoginActivity extends AppCompatActivity {
             mAuthTask = new UserLoginTask(email, password, mAuthTaskListener);
             mAuthTask.execute((Void) null);
         }
+    }
+
+    private void redirectToHome(UserLoginResult loginResult) {
+        Intent intent = new Intent(this, HomeActivity.class);
+        intent.putExtra("token", loginResult.getToken());
+        startActivity(intent);
+        finish();
     }
 
     /**

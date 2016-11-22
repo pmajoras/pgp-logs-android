@@ -16,4 +16,5 @@
 
     <!-- Generic messages -->
     <string name="invalid_parameters">The parameters are invalid.</string>
+    <string name="logout">Logout</string>
 </resources>
