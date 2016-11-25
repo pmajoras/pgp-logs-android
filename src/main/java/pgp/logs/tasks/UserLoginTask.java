@@ -2,7 +2,13 @@ package pgp.logs.tasks;
 
 import android.os.AsyncTask;
 
+import org.json.JSONException;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import pgp.logs.models.UserLoginResult;
+import pgp.logs.network.NetworkService;
 
 /**
  * Represents an asynchronous login/registration task used to authenticate
@@ -13,6 +19,7 @@ public class UserLoginTask extends AsyncTask<Void, Void, UserLoginResult> {
     private final String mEmail;
     private final String mPassword;
     private ITaskListener<UserLoginResult> mTaskListener;
+    private final NetworkService networkService = new NetworkService();
 
     public UserLoginTask(String email, String password, ITaskListener<UserLoginResult> taskListener) {
         mEmail = email;
@@ -22,18 +29,14 @@ public class UserLoginTask extends AsyncTask<Void, Void, UserLoginResult> {
 
     @Override
     protected UserLoginResult doInBackground(Void... params) {
-        // TODO: attempt authentication against a network service.
-
-        UserLoginResult result = new UserLoginResult();
+        UserLoginResult result = null;
 
         try {
-            // Simulate network access.
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            return result;
+            result = networkService.authenticate(mEmail, mPassword);
+        } catch (JSONException | ExecutionException | TimeoutException | InterruptedException e) {
+            e.printStackTrace();
         }
 
-        result.setToken("fakeTokenTest");
         return result;
     }
 
