@@ -8,6 +8,7 @@ import android.util.Log;
 public class LoginUtil {
 
     private static final String mAuthTokenKey = "PGP-LOGS-TOKEN";
+    private static final String mUserIdKey = "PGP-LOGS-USERID";
 
     public static void setAuthToken(String token, Context context) {
         SharedPreferences settings = PreferenceManager
@@ -27,6 +28,26 @@ public class LoginUtil {
 
         Log.d("PGP-LOGS", "LoginUtil >> getAuthToken >> " + authToken);
         return authToken;
+    }
+
+    public static void setUserId(String userId, Context context) {
+        SharedPreferences settings = PreferenceManager
+                .getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString(mUserIdKey, userId);
+
+        Log.d("PGP-LOGS", "LoginUtil >> setUserId >> " + userId);
+        editor.commit();
+    }
+
+    public static String getUserId(Context context) {
+        SharedPreferences settings = PreferenceManager
+                .getDefaultSharedPreferences(context);
+
+        String userId = settings.getString(mUserIdKey, "");
+
+        Log.d("PGP-LOGS", "LoginUtil >> getAuthToken >> " + userId);
+        return userId;
     }
 
     public static void ResetAuthToken(Context context) {

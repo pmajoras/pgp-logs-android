@@ -68,6 +68,7 @@ public class LoginActivity extends AppCompatActivity {
 
         if (loginResult.IsAuthenticated()) {
             LoginUtil.setAuthToken(loginResult.getToken(), this);
+            LoginUtil.setUserId(loginResult.getId(), this);
             redirectToHome(loginResult);
         } else {
             mPasswordView.setError(getString(R.string.error_incorrect_password));

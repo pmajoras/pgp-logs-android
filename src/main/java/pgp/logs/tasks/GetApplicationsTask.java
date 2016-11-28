@@ -7,42 +7,38 @@ import org.json.JSONException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import pgp.logs.models.UserLoginResult;
+import pgp.logs.models.ApplicationsResult;
 import pgp.logs.network.NetworkService;
 
-/**
- * Represents an asynchronous login/registration task used to authenticate
- * the user.
- */
-public class UserLoginTask extends AsyncTask<Void, Void, UserLoginResult> {
+public class GetApplicationsTask extends AsyncTask<Void, Void, ApplicationsResult> {
 
-    private final String mEmail;
-    private final String mPassword;
-    private ITaskListener<UserLoginResult> mTaskListener;
+    private final String mUserId;
+    private final String mToken;
+    private ITaskListener<ApplicationsResult> mTaskListener;
     private final NetworkService networkService = new NetworkService();
 
-    public UserLoginTask(String email, String password, ITaskListener<UserLoginResult> taskListener) {
-        mEmail = email;
-        mPassword = password;
+    public GetApplicationsTask(String userId, String token, ITaskListener<ApplicationsResult> taskListener) {
+        mUserId = userId;
+        mToken = token;
         mTaskListener = taskListener;
     }
 
     @Override
-    protected UserLoginResult doInBackground(Void... params) {
-        UserLoginResult result;
+    protected ApplicationsResult doInBackground(Void... params) {
+        ApplicationsResult result;
 
         try {
-            result = networkService.authenticate(mEmail, mPassword);
+            result = networkService.getApplications(mUserId, mToken);
         } catch (JSONException | ExecutionException | TimeoutException | InterruptedException e) {
             e.printStackTrace();
-            result = new UserLoginResult();
+            result = new ApplicationsResult();
         }
 
         return result;
     }
 
     @Override
-    protected void onPostExecute(final UserLoginResult loginResult) {
+    protected void onPostExecute(final ApplicationsResult loginResult) {
         if (mTaskListener != null) {
             mTaskListener.onTaskCompleted(loginResult);
         }
