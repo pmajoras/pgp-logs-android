@@ -22,7 +22,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 
 import pgp.logs.models.ApplicationsResult;
 import pgp.logs.models.PgpApplication;
+import pgp.logs.models.PgpLogAlert;
 import pgp.logs.models.UserLoginResult;
 
 public class NetworkService {
@@ -100,6 +103,41 @@ public class NetworkService {
         return getApplicationsResultFromJsonArray(response);
     }
 
+    public ArrayList<PgpLogAlert> getLogAlerts(String userId, final String token) throws JSONException, InterruptedException, ExecutionException, TimeoutException {
+        String url = baseApiUrl + "user/" + userId + "/logAlerts/";
+
+        Log.d("PGP-LOGS", "NetworkService >> getLogAlerts >> Start");
+        long startNow = android.os.SystemClock.uptimeMillis();
+
+        // Set up the network to use HttpURLConnection as the HTTP client.
+        Network network = new BasicNetwork(new HurlStack());
+        // Instantiate the RequestQueue with the cache and network.
+        RequestQueue requestQueue = new RequestQueue(new NoCache(), network);
+
+        // Start the queue
+        requestQueue.start();
+        RequestFuture<JSONArray> future = RequestFuture.newFuture();
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null, future, future) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authentication", token);
+                return headers;
+            }
+        };
+        // Add the request to the RequestQueue.
+        requestQueue.add(request);
+        JSONArray response = future.get(20, TimeUnit.SECONDS);
+
+        requestQueue.stop();
+
+        long endNow = android.os.SystemClock.uptimeMillis();
+        Log.d("PGP-LOGS", "NetworkService >> getLogAlerts >> Execution time: " + (endNow - startNow) + " ms");
+        Log.d("PGP-LOGS", "NetworkService >> getLogAlerts >> Finish Method");
+        return getLogAlertsResultFromJsonArray(response);
+    }
+
+
     private UserLoginResult getLogResultFromJson(JSONObject response) {
         UserLoginResult result = new UserLoginResult();
 
@@ -120,6 +158,20 @@ public class NetworkService {
             for (int i = 0; i < response.length(); i++) {
                 JSONObject application = response.getJSONObject(i);
                 result.add(new PgpApplication(application));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private ArrayList<PgpLogAlert> getLogAlertsResultFromJsonArray(JSONArray response) {
+        ArrayList<PgpLogAlert> result = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < response.length(); i++) {
+                JSONObject application = response.getJSONObject(i);
+                result.add(new PgpLogAlert(application));
             }
         } catch (JSONException e) {
             e.printStackTrace();

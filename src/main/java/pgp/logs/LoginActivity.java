@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
@@ -19,6 +20,8 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
@@ -35,8 +38,10 @@ import java.util.List;
 
 import pgp.logs.models.FormValidationResult;
 import pgp.logs.models.UserLoginResult;
+import pgp.logs.services.LogAlertServiceHandler;
 import pgp.logs.tasks.ITaskListener;
 import pgp.logs.tasks.UserLoginTask;
+import pgp.logs.utils.LogAlertNotificationUtil;
 import pgp.logs.utils.LoginActivityUtil;
 import pgp.logs.utils.LoginUtil;
 
@@ -69,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
         if (loginResult.IsAuthenticated()) {
             LoginUtil.setAuthToken(loginResult.getToken(), this);
             LoginUtil.setUserId(loginResult.getId(), this);
-            redirectToHome(loginResult);
+            redirectToHome();
         } else {
             mPasswordView.setError(getString(R.string.error_incorrect_password));
             mPasswordView.requestFocus();
@@ -95,9 +100,21 @@ public class LoginActivity extends AppCompatActivity {
 
         mLoginActivityUtil = new LoginActivityUtil(LoginActivity.this, mEmailView, mPasswordView);
 
-        String currentToken = LoginUtil.getAuthToken(getBaseContext());
-        if (!TextUtils.isEmpty(currentToken)) {
-            redirectToHome(new UserLoginResult(currentToken));
+        if (LoginUtil.isAuthenticated(getBaseContext())) {
+            Bundle extras = getIntent().getExtras();
+            if (extras != null && extras.containsKey(LogAlertNotificationUtil.LogAlertNotificationExtra)) {
+                try {
+                    ArrayList<Parcelable> list = extras.getParcelableArrayList(LogAlertNotificationUtil.LogAlertNotificationExtra);
+                    redirectToLogAlerts(list);
+                }
+                catch (Exception ex) {
+                    Log.e("PGP-LOGS", "Error parsing " + ex.toString());
+                }
+            } else {
+                redirectToHome();
+            }
+        } else {
+            LogAlertServiceHandler.startLogAlertService(this);
         }
     }
 
@@ -134,9 +151,16 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void redirectToHome(UserLoginResult loginResult) {
+    private void redirectToHome() {
         Intent intent = new Intent(this, HomeActivity.class);
-        intent.putExtra("token", loginResult.getToken());
+        startActivity(intent);
+        finish();
+    }
+
+    private void redirectToLogAlerts(ArrayList<Parcelable> extra) {
+        Intent intent = new Intent(this, LogAlertsActivity.class);
+        intent.putParcelableArrayListExtra(LogAlertNotificationUtil.LogAlertNotificationExtra, extra);
+
         startActivity(intent);
         finish();
     }

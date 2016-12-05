@@ -17,4 +17,5 @@
     <!-- Generic messages -->
     <string name="invalid_parameters">The parameters are invalid.</string>
     <string name="logout">Logout</string>
+    <string name="click_here_log_alerts">Click here to see the log alerts details.</string>
 </resources>

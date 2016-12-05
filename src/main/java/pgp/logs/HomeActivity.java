@@ -8,12 +8,16 @@ import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import pgp.logs.models.ApplicationsResult;
 import pgp.logs.models.PgpApplication;
+import pgp.logs.services.LogAlertServiceHandler;
 import pgp.logs.tasks.GetApplicationsTask;
 import pgp.logs.tasks.ITaskListener;
 import pgp.logs.utils.LogAlertNotificationUtil;
@@ -22,7 +26,6 @@ import pgp.logs.adapters.PgpApplicationAdapter;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private LogAlertNotificationUtil mLogAlertNotificationUtil;
     private View mProgressView;
     private View mContentView;
     private GetApplicationsTask mGetApplicationsTask = null;
@@ -53,18 +56,23 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        String token = LoginUtil.getAuthToken(this);
-        mLogAlertNotificationUtil = new LogAlertNotificationUtil(this, LoginActivity.class);
         mProgressView = findViewById(R.id.home_progress);
         mContentView = findViewById(R.id.scroll_content);
 
         this.showProgress(true);
         mGetApplicationsTask = new GetApplicationsTask(LoginUtil.getUserId(this), LoginUtil.getAuthToken(this), mGetApplicationsTaskListener);
         mGetApplicationsTask.execute();
-        Log.d("PGP-LOGS", "HomeActivity >> EVENT >> onCreate >> token >>" + token);
+        LogAlertServiceHandler.startLogAlertService(this);
+        Log.d("PGP-LOGS", "HomeActivity >> EVENT >> onCreate");
     }
 
-    public void logout(View view) {
+    public void redirectToLogAlerts(View view) {
+        Intent intent = new Intent(this, LogAlertsActivity.class);
+        startActivity(intent);
+        finish();
+    }
+
+    public void logout() {
         LoginUtil.ResetAuthToken(this);
         redirectToLogin();
     }
@@ -123,8 +131,24 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        mLogAlertNotificationUtil.onDestroy();
         super.onDestroy();
         Log.d("PGP-LOGS", "HomeActivity >> EVENT >> onDestroy");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_logout:
+                logout();
+                break;
+        }
+        return true;
     }
 }

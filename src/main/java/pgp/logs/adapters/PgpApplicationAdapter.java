@@ -48,8 +48,8 @@ public class PgpApplicationAdapter extends ArrayAdapter<PgpApplication> {
             alertCount += alertList.get(i).getCount();
         }
 
-        applicationNameText.setText(application.getAppId() + " - " + application.getName() + " - alerts: " + String.valueOf(alertCount));
-        alertCountText.setText(String.valueOf(alertCount));
+        applicationNameText.setText(application.getAppId() + " - " + application.getName());
+        alertCountText.setText("Alerts: " + String.valueOf(alertCount));
 
         return view;
     }

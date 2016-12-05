@@ -58,4 +58,12 @@ public class LoginUtil {
 
         editor.apply();
     }
+
+    public static boolean isAuthenticated(Context context) {
+        boolean isAuthenticated = getAuthToken(context).length() > 0;
+
+        Log.d("PGP-LOGS", "LoginUtil >> isAuthenticated >> " + isAuthenticated);
+
+        return isAuthenticated;
+    }
 }
